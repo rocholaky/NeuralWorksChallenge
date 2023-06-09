@@ -21,13 +21,20 @@ class dataSplitter:
                                "validation": (x_val, y_val)})
         return split_dict
     
-    def resample_split(self, X, y, sampler="under", percentage=0.4): 
-        sampler = samplerFactory().create_sampler(sampler_type=sampler, percentage=percentage)
+    def resample_split(self, X, y, sampler="under", percentage=[0.4]): 
+        sampler = samplerFactory().create_sampler(sampler, *percentage)
         split_dict = self.split(X, y)
-        x_train, y_train = split_dict["train"]
-        x_train, y_train = sampler.fit_resample(x_train, y_train)
+        x_train, y_train = sampler.fit_resample(*split_dict.pop("train"))
         split_dict["train"] = (x_train, y_train)
         return split_dict
+
+    def show_split(self, split_dict): 
+        _, y_train = split_dict["train"]
+        _, y_test = split_dict["test"]
+        _, y_val = split_dict["validation"]
+        print(f"Cantidad de vuelos train {y_train.count()}", f"Cantidad de atrasos {y_train.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_train.sum()/y_train.count()}")
+        print(f"Cantidad de vuelos validación {y_val.count()}", f"Cantidad de atrasos {y_val.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_val.sum()/y_val.count()}")
+        print(f"Cantidad de vuelos test {y_test.count()}", f"Cantidad de atrasos {y_test.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_test.sum()/y_test.count()}")
     
 
         
