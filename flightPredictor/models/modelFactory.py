@@ -5,27 +5,39 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import  GridSearchCV, StratifiedKFold
 from flightPredictor.dataHandler import transformations
 from sklearn.pipeline import Pipeline
+from tqdm import tqdm
+from joblib import dump, load
+
 
 class absModel: 
-    def grid_search(self, data_dict, param_grid, scoring="accuracy"):
-        # generate a grid search object, with 5 cross validation sets
-        try: 
-            self._model= GridSearchCV(self._model, param_grid=param_grid,
-                                    cv = 5, verbose=1)
+    def grid_search(self, data_dict, param_grid, encoding_dict):
+            # generate a grid search object, with 5 cross validation sets
+        #try: 
+            
+            grid_search= GridSearchCV(self._model, param_grid=param_grid,
+                                    cv = 3, verbose=1)
+            grid_search = self.insert_model_to_pipeline(grid_search, encoding_dict)
+            
+            param_grid = {f"classifier__{key}": value for key, value in param_grid.items()}
             # extract the training set: 
-            x_train, y_train = data_dict["train"]
-            self.prepare_model(x_train)
+            x_train, y_train = data_dict["train"]            
+            
             # if theres a validation set we add it to the fit
             if "validation" in data_dict:
-                self._model.fit(x_train, y_train, eval_set=[data_dict["validation"]], scoring=scoring)
+                x_val, y_val = data_dict["validation"]
+                pipeline = grid_search.named_steps["encoder"]
+                pipeline.fit(x_train, y_train)
+                x_val = pipeline.transform(x_val)
+                grid_search = grid_search.fit(x_train, y_train, classifier__eval_set=[(x_val, y_val)], classifier__verbose=False)
             else: 
-                self._model.fit(x_train, y_train, scoring=scoring)
-        except:
-            ValueError("Check the parameters of the model")
+                grid_search.fit(x_train, y_train)
+            # obtain and save best model and parameters:
+            self._model = grid_search
+        #except:
+        #   raise ValueError("Check the parameters of the model")
         
-        # obtain and save best model and parameters
-        self._model = self._model.best_estimator_
-        self._parameters = self._model.best_params_
+        
+        
         
 
     @property
@@ -38,14 +50,13 @@ class absModel:
         # returning the base estimator. 
         return self._model 
     
-    def prepare_model(self, x_train):
+    def insert_model_to_pipeline(self, model, encoding_dict):
         pipelineFactory = transformations.pipeGenerator()
-        column_dtypes = x_train.column_dtypes
-        encoder = pipelineFactory(column_dtypes)
-        self._model = Pipeline([("encoder", encoder),
+        encoder = pipelineFactory.generate_pipeline(encoding_dict)
+        return Pipeline([("encoder", encoder),
                                 ("classifier", self._model)])
 
-    def fit(self, data_dict):
+    def fit(self, data_dict, encoding_dict):
         """
         fit: function that trains the model 
         parameters: 
@@ -53,11 +64,8 @@ class absModel:
         """
         # get training data
         x_train, y_train = data_dict["train"]
-        self.prepare_model(x_train)
-        if "validation" in data_dict: 
-            self._model = self._model.fit(x_train, y_train, eval_set=[data_dict["validation"]])
-        else: 
-            self._model.fit(x_train, y_train)
+        self._model = self.insert_model_to_pipeline(self._model, encoding_dict)
+        self._model.fit(x_train, y_train)
 
     def predict(self, x): 
         """
@@ -71,13 +79,16 @@ class absModel:
         predict probability: function that outputs the probabilities of the given data. 
         """
         return self._model.predict_proba(x)
+    
+    def save_model(self, path):
+        dump(self._model, path) 
 
 
 
 class ModelFactory:
 
     def build_model(self, model_type, **model_parameters): 
-        model_parameters["random_state"] = 42
+        model_parameters["random_state"] = 1
         if model_type=="xgboost": 
             return xgbModel(**model_parameters)
         elif model_type=="random_forest":

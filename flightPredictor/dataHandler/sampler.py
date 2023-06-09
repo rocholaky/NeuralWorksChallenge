@@ -32,7 +32,7 @@ class smoteSampler(absSampler):
         assert len(percentage==1), ValueError("smoteSampler needs just one percentage")
         super().__init__()
         self.percentage = percentage[0]
-        self.sampler = SMOTE(sampling_strategy=percentage[0], random_state=35, k_neighbors=10)
+        self.sampler = SMOTE(sampling_strategy=percentage[0], random_state=42, k_neighbors=10)
 
 
     def fit_resample(self, X, y):
@@ -54,7 +54,7 @@ class underSampler(absSampler):
         assert len(percentage)==1, ValueError("underSampler needs just one percentage")
         super().__init__()
         self.percentage = percentage
-        self.sampler = RandomUnderSampler(sampling_strategy=percentage[0], random_state=35)
+        self.sampler = RandomUnderSampler(sampling_strategy=percentage[0], random_state=42)
 
     def fit_resample(self, X, y):
         return self.sampler.fit_resample(X, y)
@@ -65,5 +65,5 @@ class smoteAndUnderSampler(absSampler):
         super().__init__()
         assert len(percentage)>1, ValueError("needs more percentage parameters")
         self.percentage = percentage
-        self.sampler_smote = SMOTE(sampling_strategy=percentage[0], random_state=35)
-        self.sampler_under = RandomUnderSampler(sampling_strategy=[1])
+        self.sampler_smote = SMOTE(sampling_strategy=percentage[0], random_state=42)
+        self.sampler_under = RandomUnderSampler(sampling_strategy=percentage[1], random_state=42)
