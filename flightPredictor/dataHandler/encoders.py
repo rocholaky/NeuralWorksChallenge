@@ -16,6 +16,8 @@ class EncoderFactory:
             return CyclicalHour()
         elif encoding_method == "cyclical-month":
             return CyclicalMonth()
+        elif encoding_method == "cyclical-day":
+            return CyclicalDay()
         elif encoding_method== "scale": 
             return Scale()
         else: 
@@ -55,8 +57,8 @@ class CyclicalHour(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         name = X.columns[0]
-        X[f"{name}_sin"] = np.sin(2 * np.pi * X[name]/ 24)
-        X[f"{name}_cos"] = np.cos(2 * np.pi * X[name]/ 24)
+        X[f"{name}_sin"] = np.sin(2 * np.pi * X[name].astype(float)/ 2400)
+        X[f"{name}_cos"] = np.cos(2 * np.pi * X[name].astype(float)/ 2400)
 
         return X.drop(columns=[name])
 
@@ -66,10 +68,22 @@ class CyclicalMonth(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         name = X.columns[0]
-        X[f"{name}_sin"] = np.sin(2 * np.pi * X[name]/ 12)
-        X[f"{name}_cos"] = np.cos(2 * np.pi * X[name]/ 12)
+        X[f"{name}_sin"] = np.sin(2 * np.pi * X[name].astype(float)/ 12)
+        X[f"{name}_cos"] = np.cos(2 * np.pi * X[name].astype(float)/ 12)
 
         return X.drop(columns=[name])
+    
+class CyclicalDay(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        name = X.columns[0]
+        X[f"{name}_sin"] = np.sin(2 * np.pi * X[name].astype(float)/ 31)
+        X[f"{name}_cos"] = np.cos(2 * np.pi * X[name].astype(float)/ 31)
+
+        return X.drop(columns=[name])
+    
     
 class Scale(BaseEstimator, TransformerMixin):
     def __init__(self) -> None:
