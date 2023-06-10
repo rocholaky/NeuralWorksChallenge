@@ -31,13 +31,16 @@ encoding_dict = {"one-hot": ["OPERA", "TIPOVUELO"]}
 modelxgb_base = classifier_factory.build_model("xgboost", objective= 'binary:logistic', learning_rate=0.01\
                                                 , subsample = 0.5, max_depth = 10)
 
-modelxgb_base.fit(split_dict, encoding_dict=encoding_dict)
 
+modelxgb_base.fit(split_dict, encoding_dict=encoding_dict)
 predicted_xgb = modelxgb_base.predict(x_test)
 print(classification_report(y_test, predicted_xgb))
-"""
 
+modelxgb_base.fit(split_dict, encoding_dict=encoding_dict)
+predicted_xgb = modelxgb_base.predict(x_test)
+print(classification_report(y_test, predicted_xgb))
 
+'''
 param_grid = parameters = {
     "scale_pos_weight": [1, 3],
     "reg_lambda": [0, 0.5],
@@ -46,4 +49,6 @@ param_grid = parameters = {
 modelxgb_base.grid_search(split_dict, param_grid, encoding_dict)
 predicted_xgb = modelxgb_base.predict(x_test)
 print(classification_report(y_test, predicted_xgb))
-"""
+
+'''
+

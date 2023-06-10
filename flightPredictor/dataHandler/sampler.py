@@ -29,7 +29,7 @@ class samplerFactory:
 class smoteSampler(absSampler):
     
     def __init__(self, *percentage) -> None:
-        assert len(percentage==1), ValueError("smoteSampler needs just one percentage")
+        assert len(percentage)==1, ValueError("smoteSampler needs just one percentage")
         super().__init__()
         self.percentage = percentage[0]
         self.sampler = SMOTE(sampling_strategy=percentage[0], random_state=42, k_neighbors=10)
@@ -67,3 +67,8 @@ class smoteAndUnderSampler(absSampler):
         self.percentage = percentage
         self.sampler_smote = SMOTE(sampling_strategy=percentage[0], random_state=42)
         self.sampler_under = RandomUnderSampler(sampling_strategy=percentage[1], random_state=42)
+
+    def fit_resample(self, X, y):
+        X, y = self.sampler_smote.fit_resample(X, y)
+        X, y = self.sampler_under.fit_resample(X, y)
+        return X, y

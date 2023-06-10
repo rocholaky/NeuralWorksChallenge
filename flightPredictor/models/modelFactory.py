@@ -5,39 +5,42 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import  GridSearchCV, StratifiedKFold
 from flightPredictor.dataHandler import transformations
 from sklearn.pipeline import Pipeline
-from tqdm import tqdm
 from joblib import dump, load
+from abc import ABC, abstractmethod
 
 
 class absModel: 
-    def grid_search(self, data_dict, param_grid, encoding_dict):
+    def grid_search(self, data_dict, param_grid, encoding_dict, cv=3):
             # generate a grid search object, with 5 cross validation sets
-        #try: 
-            
-            grid_search= GridSearchCV(self._model, param_grid=param_grid,
-                                    cv = 3, verbose=1)
-            grid_search = self.insert_model_to_pipeline(grid_search, encoding_dict)
-            
+        try: 
+            grid_search = self.insert_model_to_pipeline(self.build(), encoding_dict)
             param_grid = {f"classifier__{key}": value for key, value in param_grid.items()}
+            grid_search= GridSearchCV(grid_search, param_grid=param_grid,
+                                    cv = cv, verbose=1)
+            
+           
             # extract the training set: 
             x_train, y_train = data_dict["train"]            
             
             # if theres a validation set we add it to the fit
             if "validation" in data_dict:
                 x_val, y_val = data_dict["validation"]
-                pipeline = grid_search.named_steps["encoder"]
+                pipeline = grid_search.estimator.named_steps["encoder"]
                 pipeline.fit(x_train, y_train)
                 x_val = pipeline.transform(x_val)
-                grid_search = grid_search.fit(x_train, y_train, classifier__eval_set=[(x_val, y_val)], classifier__verbose=False)
+                grid_search.fit(x_train, y_train, classifier__eval_set=[(x_val, y_val)], classifier__verbose=False)
             else: 
                 grid_search.fit(x_train, y_train)
             # obtain and save best model and parameters:
+            self._parameters.update(grid_search.best_params_)
             self._model = grid_search
-        #except:
-        #   raise ValueError("Check the parameters of the model")
+        except:
+           raise ValueError("Check the parameters of the model")
         
         
-        
+    @abstractmethod
+    def build(self):
+        raise NotImplementedError()
         
 
     @property
@@ -54,7 +57,7 @@ class absModel:
         pipelineFactory = transformations.pipeGenerator()
         encoder = pipelineFactory.generate_pipeline(encoding_dict)
         return Pipeline([("encoder", encoder),
-                                ("classifier", self._model)])
+                                ("classifier", model)])
 
     def fit(self, data_dict, encoding_dict):
         """
@@ -64,7 +67,7 @@ class absModel:
         """
         # get training data
         x_train, y_train = data_dict["train"]
-        self._model = self.insert_model_to_pipeline(self._model, encoding_dict)
+        self._model = self.insert_model_to_pipeline(self.build(), encoding_dict)
         self._model.fit(x_train, y_train)
 
     def predict(self, x): 
@@ -106,19 +109,26 @@ class xgbModel(absModel):
         super().__init__()
         self._parameters = model_parameters
         self._parameters["objective"] =  "binary:logistic"
-        self._model = xgb.XGBClassifier(**model_parameters)
-
+        self._model = self.build()
+    
+    def build(self):
+        return xgb.XGBClassifier(**self.parameters)
 
 class randomForestModel(absModel): 
 
     def __init__(self, **model_parameters) -> None:
         super().__init__()
         self._parameters = model_parameters
-        self._model = RandomForestClassifier(**model_parameters)
+        self._model = self.build()
 
-
+    def build(self):
+        return RandomForestClassifier(**self.parameters)
+    
 class decisionTreeModel(absModel): 
     def __init__(self, **model_parameters) -> None:
         super().__init__()
         self._parameters = model_parameters
-        self.model = DecisionTreeClassifier(**model_parameters)
+        self.model = self.build()
+
+    def build(self):
+        return DecisionTreeClassifier(**self.parameters)
