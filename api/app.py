@@ -1,9 +1,24 @@
+import resource
+# Get the current soft and hard limits
+soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+print("Current limits:", soft_limit, hard_limit)
+
+# Set new limits
+new_soft_limit = 63000  # Set your desired soft limit
+new_hard_limit = 630000  # Set your desired hard limit
+resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft_limit, new_hard_limit))
+
 from fastapi import FastAPI, Query, HTTPException
 import uvicorn
 from pydantic import BaseModel
 import joblib
 from datetime import datetime
 import pandas as pd
+
+
+
+soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+print("New limits:", soft_limit, hard_limit)
 
 ModeloPredictivoAtrasos = joblib.load("api/flightPredictor.pkl")
 app = FastAPI()
@@ -45,4 +60,4 @@ async def atrasado(flight_query:FlightDelayPredictor):
             raise HTTPException(status_code=400, detail="Item ID must be greater than zero")
 
 if __name__=="__main__":
-     uvicorn.run(app, host='127.0.0.1', port=8000, workers=8 )
+     uvicorn.run(app, host='127.0.0.1', port=8000, workers=5 )

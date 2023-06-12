@@ -12,24 +12,30 @@ from abc import ABC, abstractmethod
 
 class absModel: 
     def grid_search(self, data_dict, param_grid, encoding_dict, cv=3):
-            # generate a grid search object, with 5 cross validation sets
+            # generate a grid search object, with cv cross validation sets
         try: 
+            # create a model with basic parameters
             model = self.build()
+            # create a pipeline to encode the data 
             pipeline = self.create_pipeline(encoding_dict)
-            #grid_search = self.insert_model_to_pipeline(self.build(), encoding_dict)
-            param_grid = {f"{key}": value for key, value in param_grid.items()}
+            # generate a grid search object on the model 
             grid_search= GridSearchCV(model, param_grid=param_grid,
                                     cv = cv, verbose=1)
             
            
             # extract the training set: 
-            x_train, y_train = data_dict["train"]            
+            x_train, y_train = data_dict["train"]     
+            # fit the pipeline       
             pipeline.fit(x_train, y_train)
+            # transform the training set
             x_train = pipeline.transform(x_train)
             # if theres a validation set we add it to the fit
             if "validation" in data_dict:
+                # get the validation set
                 x_val, y_val = data_dict["validation"]
+                # transform the validation set
                 x_val = pipeline.transform(x_val)
+                # procede to the grid search
                 grid_search.fit(x_train, y_train, eval_set=[(x_val, y_val)], verbose=False)
             else: 
                 grid_search.fit(x_train, y_train)
@@ -98,7 +104,9 @@ class absModel:
 
 
 class ModelFactory:
-
+    ## model factory generates different classifiers. 
+    # The supported classifiers are decision tree, random forest and xgboost. 
+    # you never work with the classifier class, you just create it with this factory class. 
     def build_model(self, model_type, **model_parameters): 
         model_parameters["random_state"] = 1
         if model_type=="xgboost": 

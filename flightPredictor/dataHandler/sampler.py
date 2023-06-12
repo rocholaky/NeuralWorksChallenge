@@ -2,12 +2,41 @@ from imblearn.over_sampling import SMOTENC, RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
 from abc import ABC, abstractmethod
 
+'''
+### SAMPLERS
+
+In this script you will find the sampling methods that can be used on data. 
+
+ONE IMPORTANT THING TO TAKE INTO ACCOUNT IS THAT THE PERCENTAGE VARIABLE IS DEFINED AS 
+
+PERCENTAGE = N_MINORITY/N_MAYORITY
+
+You can choose from 4 methods: 
+
+OVERSAMPLING: generate a random over sampling on data. 
+
+
+UnderSampling: random under sample mayority class.
+
+SMOTE: RUN smote algorithm to generate samples of data. 
+
+SMOTE-UNDER: it is the recommended way to run SMOTE, it first runs SMOTE and then runs an under sampling on smote upsampled data. 
+
+
+'''
+
+
+
+
+
 class absSampler(ABC): 
     @abstractmethod
     def init_sampler(self, x): 
+        # function that help us init different samplers
         pass
 
     def fit_resample(self, X, y):
+        # the method that generates the sampling: 
         sampler = self.init_sampler(X)
         return sampler.fit_resample(X, y)
 
@@ -15,6 +44,7 @@ class absSampler(ABC):
 class samplerFactory: 
     def create_sampler(self, sampler_type, *percentage):
         assert isinstance(sampler_type, str), "Value should be a string"
+        " method that helps select the sampling strategy. "
         sampler_type = sampler_type.lower()
         if sampler_type =="smote": 
             return smoteSampler(*percentage)

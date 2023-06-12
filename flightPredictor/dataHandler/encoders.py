@@ -6,6 +6,37 @@ import numpy as np
 import pandas as pd
 from geopy.geocoders import Nominatim 
 import os
+'''
+#### ENCODERS: #######
+In this script you will find some encodings you can do in data: 
+Specifically all encodings are controlled by a encoder factory that handles encoder creation: 
+
+The possible encoders we can load are: 
+
+
+## CATEGORICAL
+One-hot
+Ordinal
+
+## numerical with cyclic behavior
+cyclical-hour
+cyclical-day
+cyclical-month
+
+## NUMERICAL: 
+scale
+
+# cities: 
+city
+
+
+
+'''
+
+
+
+
+
 
 
 class EncoderFactory:
