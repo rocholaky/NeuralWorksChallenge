@@ -44,9 +44,9 @@ conda env create -f environment.yml
 ```
 
 # Probar el código: 
-Para corer el código se debe utilizar el notebook mlapi.py, en este documento en la sección: Pregunta 3 se encuentra la definición y levantamiento del test de estrés. Para hacer dicho test correr la sección Pregunta 3 del notebook y luego correr en la terminal el siguiente comando: 
+Para corer el código se debe utilizar el notebook mlapi.py, en este documento en la sección: Pregunta 4 se encuentra la definición y levantamiento del test de estrés. Para hacer dicho test correr la sección Pregunta 4 del notebook y luego correr en la terminal el siguiente comando: 
 ```bash
 cd {path repositorio}
 uvicorn api.app:app --reload
 ```
-Una vez levantado el servidor solamente basta con correr la sección Pregunta 3 del notebook. 
+Una vez levantado el servidor solamente basta con correr la sección Pregunta 4 del notebook. 
