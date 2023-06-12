@@ -4,6 +4,8 @@ from sklearn.preprocessing import StandardScaler
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
+from geopy.geocoders import Nominatim 
+import os
 
 
 class EncoderFactory:
@@ -20,6 +22,8 @@ class EncoderFactory:
             return CyclicalDay()
         elif encoding_method== "scale": 
             return Scale()
+        elif encoding_method=="city": 
+            return LongLangEncoder()
         else: 
             raise ValueError(f"Invalid Encoder type: {encoding_method}")
     
@@ -97,7 +101,41 @@ class Scale(BaseEstimator, TransformerMixin):
     def transform(self, X): 
         return self.scaler.transform(X)
 
+
+class LongLangEncoder(BaseEstimator, TransformerMixin):
+    def __init__(self) -> None:
+        super().__init__()
+        self.LONGLANG = ["LONGITUDE", "LATITUDE"]
+
+    def geocode_city(self, city):
         
+        if pd.isna(city):
+            raise ValueError("There's a row without a city")
+        
+        location = self.geolocator.geocode(city.split(",")[0])
+        if location:
+            return location.longitude, location.latitude
+        else: 
+            raise ValueError(f"Ciudad: {city} is misspelled")
+        
+    def fit(self, X, y=None):
+        self.geolocator = Nominatim(user_agent="EDA")
+        self.city = pd.DataFrame(np.concatenate([X[a_column].unique() for a_column in X.columns]), columns=["city"])
+        self.city[self.LONGLANG]  = self.city.apply(lambda x: self.geocode_city(x["city"]), axis=1, result_type="expand")
+        self.city.to_json(orient="records")
+        delattr(self, "geolocator")
+        return self
+    
+    def transform(self, X):
+        names = X.columns.tolist()
+        city = pd.DataFrame(self.city)
+        for a_name in names: 
+            X = X.merge(city[self.LONGLANG+["city"]], left_on=a_name, right_on="city", how="left")
+            X.rename(columns={"LONGITUDE": f"Longitude_{a_name}", "LATITUDE":f"Latitude_{a_name}"}, inplace=True)
+            X.drop(columns=["city"], inplace=True)
+        return X.drop(columns=names)
+
+            
 
 
 

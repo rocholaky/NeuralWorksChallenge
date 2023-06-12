@@ -31,9 +31,10 @@ class dataSplitter:
     def show_split(self, split_dict): 
         _, y_train = split_dict["train"]
         _, y_test = split_dict["test"]
-        _, y_val = split_dict["validation"]
         print(f"Cantidad de vuelos train {y_train.count()}", f"Cantidad de atrasos {y_train.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_train.sum()/y_train.count()}")
-        print(f"Cantidad de vuelos validación {y_val.count()}", f"Cantidad de atrasos {y_val.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_val.sum()/y_val.count()}")
+        if self.val_size: 
+            _, y_val = split_dict["validation"]
+            print(f"Cantidad de vuelos validación {y_val.count()}", f"Cantidad de atrasos {y_val.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_val.sum()/y_val.count()}")
         print(f"Cantidad de vuelos test {y_test.count()}", f"Cantidad de atrasos {y_test.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_test.sum()/y_test.count()}")
     
 

@@ -5,7 +5,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import  GridSearchCV, StratifiedKFold
 from flightPredictor.dataHandler import transformations
 from sklearn.pipeline import Pipeline
-from joblib import dump, load
+import joblib
+from sklearn.base import BaseEstimator
 from abc import ABC, abstractmethod
 
 
@@ -13,27 +14,28 @@ class absModel:
     def grid_search(self, data_dict, param_grid, encoding_dict, cv=3):
             # generate a grid search object, with 5 cross validation sets
         try: 
-            grid_search = self.insert_model_to_pipeline(self.build(), encoding_dict)
-            param_grid = {f"classifier__{key}": value for key, value in param_grid.items()}
-            grid_search= GridSearchCV(grid_search, param_grid=param_grid,
+            model = self.build()
+            pipeline = self.create_pipeline(encoding_dict)
+            #grid_search = self.insert_model_to_pipeline(self.build(), encoding_dict)
+            param_grid = {f"{key}": value for key, value in param_grid.items()}
+            grid_search= GridSearchCV(model, param_grid=param_grid,
                                     cv = cv, verbose=1)
             
            
             # extract the training set: 
             x_train, y_train = data_dict["train"]            
-            
+            pipeline.fit(x_train, y_train)
+            x_train = pipeline.transform(x_train)
             # if theres a validation set we add it to the fit
             if "validation" in data_dict:
                 x_val, y_val = data_dict["validation"]
-                pipeline = grid_search.estimator.named_steps["encoder"]
-                pipeline.fit(x_train, y_train)
                 x_val = pipeline.transform(x_val)
-                grid_search.fit(x_train, y_train, classifier__eval_set=[(x_val, y_val)], classifier__verbose=False)
+                grid_search.fit(x_train, y_train, eval_set=[(x_val, y_val)], verbose=False)
             else: 
                 grid_search.fit(x_train, y_train)
             # obtain and save best model and parameters:
             self._parameters.update(grid_search.best_params_)
-            self._model = grid_search
+            self._model = self.insert_model_to_pipeline(grid_search.best_estimator_, pipeline)
         except:
            raise ValueError("Check the parameters of the model")
         
@@ -53,9 +55,16 @@ class absModel:
         # returning the base estimator. 
         return self._model 
     
-    def insert_model_to_pipeline(self, model, encoding_dict):
+    def create_pipeline(self, encoding_dict): 
         pipelineFactory = transformations.pipeGenerator()
         encoder = pipelineFactory.generate_pipeline(encoding_dict)
+        return encoder
+    
+    def insert_model_to_pipeline(self, model, pipeline=None,encoding_dict= None):
+        if pipeline is None: 
+            encoder = self.create_pipeline(encoding_dict=encoding_dict)
+        else: 
+            encoder = pipeline
         return Pipeline([("encoder", encoder),
                                 ("classifier", model)])
 
@@ -67,7 +76,7 @@ class absModel:
         """
         # get training data
         x_train, y_train = data_dict["train"]
-        self._model = self.insert_model_to_pipeline(self.build(), encoding_dict)
+        self._model = self.insert_model_to_pipeline(self.build(), encoding_dict=encoding_dict)
         self._model.fit(x_train, y_train)
 
     def predict(self, x): 
@@ -84,7 +93,7 @@ class absModel:
         return self._model.predict_proba(x)
     
     def save_model(self, path):
-        dump(self._model, path) 
+        joblib.dump(self, path) 
 
 
 
@@ -104,7 +113,7 @@ class ModelFactory:
 
 
 
-class xgbModel(absModel): 
+class xgbModel(absModel, BaseEstimator): 
     def __init__(self, **model_parameters) -> None:
         super().__init__()
         self._parameters = model_parameters
@@ -114,7 +123,7 @@ class xgbModel(absModel):
     def build(self):
         return xgb.XGBClassifier(**self.parameters)
 
-class randomForestModel(absModel): 
+class randomForestModel(absModel, BaseEstimator): 
 
     def __init__(self, **model_parameters) -> None:
         super().__init__()
@@ -124,7 +133,7 @@ class randomForestModel(absModel):
     def build(self):
         return RandomForestClassifier(**self.parameters)
     
-class decisionTreeModel(absModel): 
+class decisionTreeModel(absModel, BaseEstimator): 
     def __init__(self, **model_parameters) -> None:
         super().__init__()
         self._parameters = model_parameters

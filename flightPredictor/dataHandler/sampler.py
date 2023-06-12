@@ -1,11 +1,15 @@
-from imblearn.over_sampling import SMOTE, RandomOverSampler
+from imblearn.over_sampling import SMOTENC, RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
 from abc import ABC, abstractmethod
 
 class absSampler(ABC): 
     @abstractmethod
-    def fit_resample(self, X, y): 
+    def init_sampler(self, x): 
         pass
+
+    def fit_resample(self, X, y):
+        sampler = self.init_sampler(X)
+        return sampler.fit_resample(X, y)
 
 
 class samplerFactory: 
@@ -32,11 +36,14 @@ class smoteSampler(absSampler):
         assert len(percentage)==1, ValueError("smoteSampler needs just one percentage")
         super().__init__()
         self.percentage = percentage[0]
-        self.sampler = SMOTE(sampling_strategy=percentage[0], random_state=42, k_neighbors=10)
-
-
-    def fit_resample(self, X, y):
-        return self.sampler.fit_resample(X, y)
+        self.sampler = SMOTENC
+    
+    def init_sampler(self, x): 
+        object_columns_in_x= x.select_dtypes(include="object").columns.tolist()
+        x_columns = x.columns    
+        sampler = self.sampler(sampling_strategy=self.percentage, random_state=42, k_neighbors=10,
+                                categorical_features=[x_columns.get_loc(a_column) for a_column in object_columns_in_x])
+        return sampler
     
 
 class overSampler(absSampler): 
@@ -44,17 +51,24 @@ class overSampler(absSampler):
         assert len(percentage)==1, ValueError("overSampler needs just one percentage")
         super().__init__()
         self.percentage = percentage
-        self.sampler = RandomOverSampler(sampling_strategy=percentage[0], random_state=35)
+        self.sampler = RandomOverSampler
 
-    def fit_resample(self, X, y):
-        return self.sampler.fit_resample(X, y)
+    def init_sampler(self, x):
+        sampler = self.sampler(sampling_strategy=self.percentage[0], random_state=42)
+        return sampler
+
+    
 
 class underSampler(absSampler):
     def __init__(self, *percentage) -> None:
         assert len(percentage)==1, ValueError("underSampler needs just one percentage")
         super().__init__()
         self.percentage = percentage
-        self.sampler = RandomUnderSampler(sampling_strategy=percentage[0], random_state=42)
+        self.sampler = RandomUnderSampler
+
+    def ini_sampler(self, x): 
+        sampler = self.sampler(sampling_strategy=self.percentage[0], random_state=42)
+        return sampler
 
     def fit_resample(self, X, y):
         return self.sampler.fit_resample(X, y)
@@ -65,10 +79,23 @@ class smoteAndUnderSampler(absSampler):
         super().__init__()
         assert len(percentage)>1, ValueError("needs more percentage parameters")
         self.percentage = percentage
-        self.sampler_smote = SMOTE(sampling_strategy=percentage[0], random_state=42)
-        self.sampler_under = RandomUnderSampler(sampling_strategy=percentage[1], random_state=42)
+        self.sampler_smote = SMOTENC
+        self.sampler_under = RandomUnderSampler
 
+
+    def init_sampler(self, x): 
+        sampler = []
+        object_columns_in_x= x.select_dtypes(include="object").columns.tolist()
+        x_columns = x.columns
+        sampler.append(self.sampler_smote(sampling_strategy=self.percentage[0], random_state=42, k_neighbors=10,
+                                categorical_features=[x_columns.get_loc(a_column) for a_column in object_columns_in_x]))
+        sampler.append(self.sampler_under(sampling_strategy=self.percentage[1], random_state=42))
+        return sampler
+    
     def fit_resample(self, X, y):
-        X, y = self.sampler_smote.fit_resample(X, y)
-        X, y = self.sampler_under.fit_resample(X, y)
+        sampler = self.init_sampler(X)
+        X, y = sampler[0].fit_resample(X, y)
+        X, y = sampler[1].fit_resample(X, y)
         return X, y
+    
+    

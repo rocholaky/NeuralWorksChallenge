@@ -8,4 +8,3 @@ class pipeGenerator:
         pipeline_list = [(method, encoder_factory.create_encoder(method), columns) for method, columns in encoding_dict.items()]
         return ColumnTransformer(transformers=pipeline_list, remainder='passthrough')
 
-
