@@ -23,29 +23,34 @@ class dataSplitter:
 
 
     def split(self, X, Y):
-
         # the split method splits data into training, test and possibly val datasets in order to train and evaluate models. 
         x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=self.test_size, shuffle=True, random_state=30)
+        # generate splits for training and testing data
         split_dict = {"train": (x_train, y_train), 
                       "test": (x_test, y_test)}
+        # if the val percentage is bigger than 0, then we will generate a validation set
         if self.val_size>0: 
             x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=self.val_size, shuffle=True, random_state=30)
             split_dict.update({"train": (x_train, y_train), 
                                "validation": (x_val, y_val)})
+        # generate split_dict
         return split_dict
     
     def resample_split(self, X, y, sampler="under", percentage=[0.4]): 
         # resample split generates samples and then splits the results in a train_test split using the split method. 
         sampler = samplerFactory().create_sampler(sampler, *percentage)
+        # fist split the data
         split_dict = self.split(X, y)
+        # using only training data, we generate a resampling of data without affecting test and validation. 
         x_train, y_train = sampler.fit_resample(*split_dict.pop("train"))
         split_dict["train"] = (x_train, y_train)
         return split_dict
 
     def show_split(self, split_dict): 
-        # the show split function shows the distribution of possitive and negative classes you can find in a dataset. 
+        # the show split function shows the distribution of possitive and negative classes you can find in the previously splitted data.  
         _, y_train = split_dict["train"]
         _, y_test = split_dict["test"]
+        # show the distribution of training data
         print(f"Cantidad de vuelos train {y_train.count()}", f"Cantidad de atrasos {y_train.sum()}", f"Porcentaje de vuelos atrasados en dataset:{y_train.sum()/y_train.count()}")
         if self.val_size: 
             _, y_val = split_dict["validation"]

@@ -15,28 +15,21 @@ The possible encoders we can load are:
 
 
 ## CATEGORICAL
-One-hot
-Ordinal
+One-hot: one hot encoding for the categorical features
+Ordinal: ordinal encoding, is done over categorical features generating integers for each particular category. 
 
 ## numerical with cyclic behavior
-cyclical-hour
-cyclical-day
-cyclical-month
+cyclical-hour: using sine and cosine functions we encode the hour in order to have cyclic relations between data
+cyclical-day: using sine and cosine functions we encode the day feature in oder to have cyclic relations between end of the day and start of next day 
+cyclical-month: using sine and cosine functions we encode the day feature in oder to have cyclic relations between end of the month and start of next month  
 
 ## NUMERICAL: 
-scale
+scale: Numeric Scaler of the attributes in order to normalize the data
 
 # cities: 
-city
-
-
+city: encoding that gets latitude and longitude depending on the city of the flight given. 
 
 '''
-
-
-
-
-
 
 
 class EncoderFactory:
@@ -84,8 +77,6 @@ class Ordinal(BaseEstimator, TransformerMixin):
         self.enc.fit(X)
         return self
 
-
-#Todo: integer encoder
 class CyclicalHour(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
